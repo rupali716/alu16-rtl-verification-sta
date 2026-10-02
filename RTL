@@ -1,1 +1,196 @@
 
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Project Name: alu16-rtl-verification-sta
+//////////////////////////////////////////////////////////////////////////////////
+
+module alu (opcode, x ,y ,Cin, sum,AC,AV,AZ,C);
+  input [3:0] opcode;
+  input [3:0] x,y;
+  input Cin;
+  output reg [3:0] sum;
+  output wire AC,AV,AZ,C;
+  //ac-carry,az-zero,as-input sign,av-overflow
+  //ALU result zero. Logical NOR of all bits written to the ALU result register
+  reg [3:0]i1;
+  reg [3:0]i2;
+  reg [3:0]op;
+  reg cin;
+  wire [3:0]p,g;
+  wire [3:0]flag;
+  always@(x,y,opcode)
+  begin
+   i1=x;
+  i2=y;
+  op=opcode;
+  cin=Cin;
+  end
+
+  wire [3:0]opcode1;
+  assign opcode1=opcode;
+  wire [3:0] x1;
+  assign x1=i1;
+  wire [3:0] y1;
+  assign y1=i2;
+  reg [3:0]pout;
+  wire temp;
+  assign temp=x1[3];
+  always@*
+  begin
+  case(opcode1)
+  0: pout = x1^y1;
+  1: pout = x1^y1;
+  2: pout = y1;
+  3: pout = ~(x1^(y1));
+  4: pout = ~(x1^(y1));
+  5: pout = ~(x1^(y1));
+  6: pout = ~(x1^(y1));
+  7: pout = ~y1;
+  8: pout = ~y1;
+  9: pout = ~x1;
+  10:pout = ~y1;
+  11:pout = y1;
+  12:pout = x1&y1;
+  13:pout = x1|y1;
+  14:pout = x1^y1;
+  15:begin if(temp)
+              pout=~x1;
+           else
+              pout=x1;   
+  end
+  endcase
+  end
+  //Gblock
+  wire [3:0]opcode2;
+  assign opcode2=opcode;
+  wire [3:0] x2;
+  assign x2=i1;
+  wire [3:0] y2;
+  assign y2=i2;
+  reg [3:0]gout;
+  always@*
+  begin
+  case(opcode2)
+  0: gout=x2&y2;
+  1: gout=x2&y2;
+  2: gout=0;
+  3: gout=x2&(~y2);
+  4: gout=(~x2)&y2;
+  5: gout=x2&(~y2);
+  6: gout=(~x2)&y2;
+  7: gout=y2;
+  8: gout=0;
+  15:begin 
+      if(x2[3])
+      gout=0; 
+      else
+      gout=1;
+  end
+  endcase
+  end
+  assign p=pout;
+  assign g=gout;
+  //adder
+  wire [3:0]opcode3;
+  assign opcode3=opcode;
+  reg [3:0]f;
+  reg cout;
+  reg [3:0]c; 
+  always@*
+  begin
+  c[0]=cin;
+  case(opcode3)
+  0:begin 
+      sum=p;
+      c[0]=1'b0;
+      c[1]=g[0]|(c[0]&p[0]);
+      c[2]=g[1]|(c[1]&p[1]);
+      c[3]=g[2]|(c[2]&p[2]);
+  end
+  1:begin
+      c[1]=g[0]|(c[0]&p[0]);
+      c[2]=g[1]|(c[1]&p[1]);
+      c[3]=g[2]|(c[2]&p[2]);
+      sum=p^c;
+  end
+  2:begin
+      c[0]=1'b1;
+      c[1]=g[0]|(c[0]&p[0]);
+      c[2]=g[1]|(c[1]&p[1]);
+      c[3]=g[2]|(c[2]&p[2]);
+      sum=p^c;
+  end
+  3:begin
+      c[0]=1'b1;
+      c[1]=g[0]|(c[0]&p[0]);
+      c[2]=g[1]|(c[1]&p[1]);
+      c[3]=g[2]|(c[2]&p[2]);
+      sum=p^c;
+  end
+  4:begin
+      c[0]=1'b1;
+      c[1]=g[0]|(c[0]&p[0]);
+      c[2]=g[1]|(c[1]&p[1]);
+      c[3]=g[2]|(c[2]&p[2]);
+      sum=p^c;
+  end
+  5:begin
+      c[1]=g[0]|(c[0]&p[0]);
+      c[2]=g[1]|(c[1]&p[1]);
+      c[3]=g[2]|(c[2]&p[2]);
+      sum=p^c;
+  end
+  6:begin
+      c[1]=g[0]|(c[0]&p[0]);
+      c[2]=g[1]|(c[1]&p[1]);
+      c[3]=g[2]|(c[2]&p[2]);
+      sum=p^c;
+  end
+  7:begin
+      c[0]=1'b0;
+      c[1]=g[0]|(c[0]&p[0]);
+      c[2]=g[1]|(c[1]&p[1]);
+      c[3]=g[2]|(c[2]&p[2]);
+      sum=p^c;
+  end
+  8:begin
+      c[0]=1'b1;
+      c[1]=g[0]|(c[0]&p[0]);
+      c[2]=g[1]|(c[1]&p[1]);
+      c[3]=g[2]|(c[2]&p[2]);
+      sum=p^c;
+  end
+  9:sum=p;
+  10:sum=p;
+  11:sum=p;
+  12:sum=p;
+  13:sum=p;
+  14:sum=p;
+  15:begin
+  if (g==0)
+      begin
+      c[0]=1'b1;
+      c[1]=g[0]|(c[0]&p[0]);
+      c[2]=(c[1]&p[1]);
+      c[3]=(c[2]&p[2]);
+      sum=p^c;
+      end
+  else
+      sum=p;
+  end
+  default:begin
+      sum=0;
+      c=0;
+  end
+  endcase
+  cout=c[3];
+  f[0]=c[2];//AC
+  if({c[3],sum}>5'b01111)
+  f[1]=1;//AV
+  if(sum==0)
+  f[2]=1;//AZ 
+  end
+  assign AC = flag[0];
+  assign AV = flag[1];
+  assign AZ = flag[2];
+endmodule
